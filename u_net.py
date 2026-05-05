@@ -16,7 +16,7 @@ def add_noise(colored_images, noise_rates, signal_rates):
     return noisy_images, noise
 
 # load image as tensor — no normalization
-image_path = "/coco_dataset/images/val2017/000000000139.jpg"
+image_path = "coco_dataset/images/val2017/000000091619.jpg"
 img    = Image.open(image_path).convert("RGB")
 tensor = T.ToTensor()(img).unsqueeze(0)              # (1, 3, H, W), range [0,1]
 
