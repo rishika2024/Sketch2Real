@@ -34,3 +34,9 @@ axes[0].imshow(to_img(tensor));       axes[0].set_title("Original");     axes[0]
 axes[1].imshow(to_img(noisy_tensor)); axes[1].set_title("Noisy (t=0.5)"); axes[1].axis("off")
 plt.tight_layout()
 plt.show()
+
+def sinusoidal_embedding(x, embedding_dim=32):
+    frequencies    = torch.exp(torch.linspace(math.log(1.0), math.log(1000.0), embedding_dim // 2, device=x.device))
+    angular_speeds = 2.0 * math.pi * frequencies
+    embeddings     = torch.cat([torch.sin(angular_speeds * x), torch.cos(angular_speeds * x)], dim=1)
+    return embeddings
