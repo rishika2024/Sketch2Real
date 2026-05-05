@@ -2,6 +2,8 @@ from PIL import Image
 import torchvision.transforms as T
 import torch
 import math
+import torch.nn as nn
+import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
 def cosine_diffusion_schedule(t):
