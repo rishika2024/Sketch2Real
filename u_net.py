@@ -21,7 +21,7 @@ img    = Image.open(image_path).convert("RGB")
 tensor = T.ToTensor()(img).unsqueeze(0)              # (1, 3, H, W), range [0,1]
 
 # pick noise level
-t = torch.tensor([[[[0.5]]]])
+t = torch.tensor([[[[1.0]]]])
 noise_rates, signal_rates = cosine_diffusion_schedule(t)
 noisy_tensor, noise = add_noise(tensor, noise_rates, signal_rates)
 
