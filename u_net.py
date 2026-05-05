@@ -40,3 +40,26 @@ def sinusoidal_embedding(x, embedding_dim=32):
     angular_speeds = 2.0 * math.pi * frequencies
     embeddings     = torch.cat([torch.sin(angular_speeds * x), torch.cos(angular_speeds * x)], dim=1)
     return embeddings
+
+class ResidualBlock(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        
+        # 1x1 conv on skip path only if channels differ
+        if in_channels != out_channels:
+            self.residual_conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+        else:
+            self.residual_conv = nn.Identity()
+        
+        self.batch_norm = nn.BatchNorm2d(in_channels, affine=False)  # center=False, scale=False like course
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding="same")
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding="same")
+
+    def forward(self, x):
+        residual = self.residual_conv(x)
+        
+        x = self.batch_norm(x)
+        x = F.silu(self.conv1(x))   # silu == swish
+        x = self.conv2(x)
+        
+        return x + residual
