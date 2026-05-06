@@ -4,19 +4,18 @@ from pathlib import Path
 
 
 def photo_to_colored_edges(image_path: str, output_path: str,
-                            canny_low: int = 50, canny_high: int = 150,
-                            blur_radius: int = 3) -> np.ndarray:
+                            blur_radius: int = 21,
+                            line_thickness: int = 2) -> np.ndarray:
     """
     Convert a photo to a colored edge drawing.
     Edge pixels take the color of the corresponding pixel in the original image.
     Everything else is white (like a blank canvas).
 
     Args:
-        image_path:   path to input photo
-        output_path:  path to save the colored edge drawing
-        canny_low:    lower threshold for Canny edge detector
-        canny_high:   upper threshold for Canny edge detector
-        blur_radius:  gaussian blur radius before edge detection (odd number)
+        image_path:     path to input photo
+        output_path:    path to save the colored edge drawing
+        blur_radius:    gaussian blur kernel size for dodge sketch (must be odd)
+        line_thickness: dilation kernel size to thicken edges (1 = no thickening)
 
     Returns:
         colored edge image as numpy array (H, W, 3) BGR
@@ -26,30 +25,28 @@ def photo_to_colored_edges(image_path: str, output_path: str,
     if img is None:
         raise FileNotFoundError(f"Could not load image: {image_path}")
 
-    # Convert to grayscale for edge detection
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray    = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    inv_gray = 255 - gray
+    blurred  = cv2.GaussianBlur(inv_gray, (blur_radius, blur_radius), 0)
+    inv_blur = 255 - blurred
+    sketch   = cv2.divide(gray, inv_blur, scale=255.0)  # classic dodge pencil sketch
 
-    # Blur slightly to reduce noise before edge detection
-    blurred = cv2.GaussianBlur(gray, (blur_radius, blur_radius), 0)
+    # sketch: dark strokes on white — threshold to binary stroke mask
+    _, edges = cv2.threshold(sketch, 220, 255, cv2.THRESH_BINARY_INV)
 
-    # Detect edges — result is a binary mask (255 = edge, 0 = background)
-    edges = cv2.Canny(blurred, canny_low, canny_high)
+    if line_thickness > 1:
+        kernel = np.ones((line_thickness, line_thickness), np.uint8)
+        edges = cv2.dilate(edges, kernel, iterations=1)
 
-    # Start with a white canvas
-    result = np.ones_like(img) * 255  # white background
-
-    # Where edges exist, copy the color from the original photo
-    edge_mask = edges > 0             # boolean mask of edge pixels
-    result[edge_mask] = img[edge_mask]
+    result = np.ones_like(img) * 255
+    result[edges > 0] = img[edges > 0]
 
     # Save
     cv2.imwrite(output_path, result)
     return result
 
 
-def process_dataset(input_dir: str, output_dir: str,
-                    canny_low: int = 50, canny_high: int = 150,
-                    blur_radius: int = 3):
+def process_dataset(input_dir: str, output_dir: str):
     """
     Process an entire folder of images into colored edge drawings.
     Output folder structure mirrors input folder structure.
@@ -58,9 +55,6 @@ def process_dataset(input_dir: str, output_dir: str,
     Args:
         input_dir:   folder of real photos  (your 'labels' / ground truth)
         output_dir:  folder to save colored edge drawings  (your 'inputs')
-        canny_low:   lower Canny threshold
-        canny_high:  upper Canny threshold
-        blur_radius: gaussian blur radius (odd number)
     """
     input_path = Path(input_dir)
     output_path = Path(output_dir)
@@ -83,12 +77,7 @@ def process_dataset(input_dir: str, output_dir: str,
         out_file.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            photo_to_colored_edges(
-                str(img_file), str(out_file),
-                canny_low=canny_low,
-                canny_high=canny_high,
-                blur_radius=blur_radius
-            )
+            photo_to_colored_edges(str(img_file), str(out_file))
             success += 1
             if success % 100 == 0:
                 print(f"  {success}/{len(image_files)} done...")
@@ -117,4 +106,16 @@ if __name__ == "__main__":
         sys.exit(1)
 
     process_dataset(str(val_dir), str(sketch_dir))
+
+
+# img = cv2.imread('coco_dataset/images/val2017/000000091619.jpg')
+# print('Shape (H, W, C):', img.shape)
+# print('Size: {}x{}'.format(img.shape[1], img.shape[0]))
+
+# result = photo_to_colored_edges(
+#     image_path="coco_dataset/images/val2017/000000000632.jpg",
+#     output_path="test_sketch.jpg"
+# )
+# print("Saved to test_sketch.jpg")
+
 
