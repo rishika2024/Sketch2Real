@@ -1,4 +1,4 @@
-coco_dataset/
+# coco_dataset/
 *.zip
 __pycache__/
 *.pyc

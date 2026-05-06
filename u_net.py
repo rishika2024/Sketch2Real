@@ -143,13 +143,10 @@ class ConditionalUNet(nn.Module):
         self.final_conv = nn.Conv2d(32, 3, kernel_size=1)
         nn.init.zeros_(self.final_conv.weight)
         nn.init.zeros_(self.final_conv.bias)
+        
     
     def forward(self, noisy_images, sketches, noise_variances):
-        """
-        noisy_images:    (B, 3, H, W)
-        sketches:        (B, 3, H, W)
-        noise_variances: (B, 1, 1, 1)
-        """
+        
         # concat sketch as condition -> 6 channels
         x = torch.cat([noisy_images, sketches], dim=1)
         x = self.initial_conv(x)
