@@ -47,7 +47,8 @@ def sinusoidal_embedding(x, embedding_dim=32):
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
-        
+        # input size and output size may differ.
+        # so we need a 1x1 conv to match the dimensions for the residual connection.
         if in_channels != out_channels:
             self.residual_conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
         else:
@@ -60,7 +61,7 @@ class ResidualBlock(nn.Module):
     def forward(self, x):
         residual = self.residual_conv(x)
         x = self.batch_norm(x)
-        x = F.silu(self.conv1(x))
+        x = F.silu(self.conv1(x))  # using SiLU activation. could have used ELU too
         x = self.conv2(x)
         return x + residual
 
@@ -71,7 +72,7 @@ class DownBlock(nn.Module):
         self.block_depth = block_depth
         self.res_blocks = nn.ModuleList()
         for i in range(block_depth):
-            if i == 0:
+            if i == 0: # 1st block takes in_channels, rest take out_channels
                 self.res_blocks.append(ResidualBlock(in_channels, out_channels))
             else:
                 self.res_blocks.append(ResidualBlock(out_channels, out_channels))
@@ -90,7 +91,7 @@ class UpBlock(nn.Module):
         self.block_depth = block_depth
         self.res_blocks = nn.ModuleList()
         for i in range(block_depth):
-            if i == 0:
+            if i == 0: # 1st block takes in_channels, rest take out_channels
                 in_ch = in_channels + skip_channels
             else:
                 in_ch = out_channels + skip_channels
@@ -99,7 +100,10 @@ class UpBlock(nn.Module):
     def forward(self, x, skips):
         x = F.interpolate(x, scale_factor=2, mode='nearest')
         for block in self.res_blocks:
-            skip = skips.pop()
+            skip = skips.pop() # get the corresponding skip connection
+            # concatenate skip connection with current feature map
             x = torch.cat([x, skip], dim=1)
             x = block(x)
         return x
+    
+
