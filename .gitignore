@@ -1,4 +1,5 @@
-# coco_dataset/
+coco_dataset/
+sketch/
 *.zip
 __pycache__/
 *.pyc
