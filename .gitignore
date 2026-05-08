@@ -6,3 +6,17 @@ __pycache__/
 *.venv/
 checkpoints/
 checkpoints_2/
+coco_dataset/
+sketch/
+dataset_large/
+sketch_large/
+train2017/
+sketch2real_data/
+*.zip
+__pycache__/
+*.pyc
+*.venv/
+*.pt/
+diagnostic_epoch45.png
+*.tar/
+check.py
