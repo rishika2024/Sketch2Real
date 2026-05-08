@@ -13,20 +13,7 @@ from tqdm import tqdm
 
 def cosine_diffusion_schedule(t):
     signal_rates = torch.cos(t * math.pi / 2)
-    noise_rates = torch.sin(t * math.pi / 2)
-    return noise_rates, signal_rates
-
-def offset_cosine_diffusion_schedule(diffusion_times):
-    min_signal_rate = 0.02
-    max_signal_rate = 0.95
-    start_angle = torch.acos(torch.tensor(max_signal_rate))
-    end_angle = torch.acos(torch.tensor(min_signal_rate))
-
-    diffusion_angles = start_angle + diffusion_times * (end_angle - start_angle)
-
-    signal_rates = torch.cos(diffusion_angles)
-    noise_rates = torch.sin(diffusion_angles)
-
+    noise_rates  = torch.sin(t * math.pi / 2)
     return noise_rates, signal_rates
 
 # forward process: x_t = signal_rate * x_0 + noise_rate * noise
@@ -36,9 +23,9 @@ def add_noise(colored_images, noise_rates, signal_rates):
     return noisy_images, noise
 
 def sinusoidal_embedding(x, embedding_dim=32):
-    frequencies = torch.exp(torch.linspace(math.log(1.0), math.log(1000.0), embedding_dim // 2, device=x.device))
+    frequencies    = torch.exp(torch.linspace(math.log(1.0), math.log(1000.0), embedding_dim // 2, device=x.device))
     angular_speeds = 2.0 * math.pi * frequencies
-    embeddings = torch.cat([torch.sin(angular_speeds * x), torch.cos(angular_speeds * x)], dim=1)
+    embeddings     = torch.cat([torch.sin(angular_speeds * x), torch.cos(angular_speeds * x)], dim=1)
     return embeddings
 
 
@@ -104,7 +91,7 @@ class UpBlock(nn.Module):
 
 
 class ConditionalUNet(nn.Module):
-    def __init__(self, image_size=256, noise_embedding_size=64):
+    def __init__(self, image_size=128, noise_embedding_size=64):
         super().__init__()
         self.image_size = image_size
         self.noise_embedding_size = noise_embedding_size
@@ -112,20 +99,19 @@ class ConditionalUNet(nn.Module):
         self.initial_conv = nn.Conv2d(6, 64, kernel_size=1)
         in_after_concat = 64 + noise_embedding_size
 
-        self.down1 = DownBlock(in_after_concat, 64,  block_depth=2)
-        self.down2 = DownBlock(64,  128, block_depth=2)
-        self.down3 = DownBlock(128, 256, block_depth=2)
+        self.down1 = DownBlock(in_after_concat, 32,  block_depth=2)
+        self.down2 = DownBlock(32,  64, block_depth=2)
+        self.down3 = DownBlock(64, 128, block_depth=2)
 
-        self.bottleneck1 = ResidualBlock(256, 512)
-        self.bottleneck2 = ResidualBlock(512, 512)
-        self.bottleneck3 = ResidualBlock(512, 256)
+        self.bottleneck1 = ResidualBlock(128, 256)
+        self.bottleneck2 = ResidualBlock(256, 256)
+        self.bottleneck3 = ResidualBlock(256, 128)
 
-        self.up1 = UpBlock(256, 128, block_depth=2, skip_channels=256)
-        self.up2 = UpBlock(128, 64,  block_depth=2, skip_channels=128)
-        self.up3 = UpBlock(64,  32,  block_depth=2, skip_channels=64)
+        self.up1 = UpBlock(128, 64, block_depth=2, skip_channels=128)
+        self.up2 = UpBlock(64, 32,  block_depth=2, skip_channels=64)
+        self.up3 = UpBlock(32,  16,  block_depth=2, skip_channels=32)
 
-        self.final_conv = nn.Conv2d(32, 3, kernel_size=1)
-
+        self.final_conv = nn.Conv2d(16, 3, kernel_size=1)
         nn.init.zeros_(self.final_conv.weight)
         nn.init.zeros_(self.final_conv.bias)
 
@@ -164,73 +150,72 @@ def update_ema(ema_model, model, decay=0.999):
 class SketchPhotoDataset(Dataset):
     """Loads (sketch, photo) pairs. Filenames must match across both folders."""
     def __init__(self, image_dir, sketch_dir, split='train', val_fraction=0.1, seed=42):
-         # after shuffle, val = 10% and train = 90% of the data
-         # for 5000 images, val will have 500 and train will have 4500
-    
         self.image_dir  = Path(image_dir)
         self.sketch_dir = Path(sketch_dir)
+
+        all_files = sorted([
+            f.name for f in self.image_dir.iterdir()
+            if f.suffix.lower() in {".jpg", ".jpeg", ".png"}
+        ])
         
-        # get all filenames and sort so that we have matching pairs
-        all_files = sorted([f.name for f in self.image_dir.iterdir()]) 
-        
-        # shuffle and split for test and val
-        random_seed = random.Random(seed)
-        random_seed.shuffle(all_files)
+        # deterministic shuffle and split
+        rng = random.Random(seed)
+        rng.shuffle(all_files)
         n_val = int(len(all_files) * val_fraction)
         if split == 'train':
             self.filenames = all_files[n_val:]
-        else:  
-            self.filenames = all_files[:n_val]        
+        else:  # val
+            self.filenames = all_files[:n_val]
 
-    def convert_to_tensor(self, idx):
-        name = self.filenames[idx]
-        photo = Image.open(self.image_dir  / name).convert("RGB")
+        self.transform = transforms.ToTensor()
+
+    def __len__(self):
+        return len(self.filenames)
+
+    def __getitem__(self, idx):
+        name   = self.filenames[idx]
+        photo  = Image.open(self.image_dir  / name).convert("RGB")
         sketch = Image.open(self.sketch_dir / name).convert("RGB")
-        return transforms.ToTensor(sketch), transforms.ToTensor(photo)
+        return self.transform(sketch), self.transform(photo)
 
 
 def train(
-    image_dir = "coco_dataset/images/val2017",
-    sketch_dir = "sketch",
-    output_dir = "checkpoints_2",
-    image_size = 256,
-    batch_size = 64,
-    epochs = 500,
-    lr = 1e-4,
-    weight_decay = 1e-4,
-    ema_decay = 0.999,
+    image_dir       = "coco_dataset/images/val2017",
+    sketch_dir      = "sketch",
+    output_dir      = "checkpoints",
+    image_size      = 128,
+    batch_size      = 64,
+    epochs          = 500,
+    lr              = 1e-3,
+    weight_decay    = 1e-4,
+    ema_decay       = 0.999,
     noise_embedding_size = 64,
-    save_every = 10,
-    val_fraction = 0.1,
+    save_every      = 10,
+    val_fraction    = 0.1,
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    """SPLIT TEST AND VAL DATASET"""
+    # data — train and val splits
     train_dataset = SketchPhotoDataset(image_dir, sketch_dir, split='train', val_fraction=val_fraction)
-    val_dataset = SketchPhotoDataset(image_dir, sketch_dir, split='val', val_fraction=val_fraction)
+    val_dataset   = SketchPhotoDataset(image_dir, sketch_dir, split='val',   val_fraction=val_fraction)
     
-    """LOAD DATA"""
-    # num_workers = number of cpu threads for loading data.
-    # pin_memory =  if True, the data loader will copy Tensors into CUDA pinned memory before returning them. (for external gpu)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True, drop_last=True)
-    val_loader   = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True, drop_last=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
+                              num_workers=4, pin_memory=True, drop_last=True)
+    val_loader   = DataLoader(val_dataset, batch_size=batch_size, shuffle=False,
+                              num_workers=2, pin_memory=True, drop_last=True)
     
     print(f"Train: {len(train_dataset)} pairs, Val: {len(val_dataset)} pairs")
 
-    model = ConditionalUNet(image_size=image_size, noise_embedding_size=noise_embedding_size).to(device)
-    # p.numel() gives the number of parameters in the model
+    model = ConditionalUNet(image_size=image_size,
+                            noise_embedding_size=noise_embedding_size).to(device)
     print(f"Parameters: {sum(p.numel() for p in model.parameters()) / 1e6:.2f}M")
-    
-    # copy and freeze emma model (no grad descent)
+
     ema_model = copy.deepcopy(model)
     for p in ema_model.parameters():
         p.requires_grad_(False)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
-    
-    # set learning rate scheduler to CosineAnnealingLR 
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -240,20 +225,22 @@ def train(
     for epoch in range(1, epochs + 1):
         model.train()
         epoch_loss = 0.0
-        
-        # tqdm is for showing a progress bar
+
         pbar = tqdm(train_loader, desc=f"Epoch {epoch}/{epochs}")
         for sketches, photos in pbar:
             sketches = sketches.to(device)
-            photos  = photos.to(device)
+            photos   = photos.to(device)
+            B        = photos.shape[0]
 
-            B = photos.shape[0]
             t = torch.rand(B, 1, 1, 1, device=device)
-            noise_rates, signal_rates = offset_cosine_diffusion_schedule(t)
+            noise_rates, signal_rates = cosine_diffusion_schedule(t)
+
             noisy_photos, noise = add_noise(photos, noise_rates, signal_rates)
-            noise_variances = t
+
+            noise_variances = noise_rates ** 2
             predicted_noise = model(noisy_photos, sketches, noise_variances)
-            loss = F.mse_loss(predicted_noise, noise)
+
+            loss = F.l1_loss(predicted_noise, noise)
 
             optimizer.zero_grad()
             loss.backward()
@@ -275,15 +262,13 @@ def train(
                 sketches, photos = sketches.to(device), photos.to(device)
                 B = photos.shape[0]
                 t = torch.rand(B, 1, 1, 1, device=device)
-                noise_rates, signal_rates = offset_cosine_diffusion_schedule(t)
+                noise_rates, signal_rates = cosine_diffusion_schedule(t)
                 noisy_photos, noise = add_noise(photos, noise_rates, signal_rates)
-                noise_variances = t
-                predicted_noise = model(noisy_photos, sketches, noise_variances)
-                val_loss += F.mse_loss(predicted_noise, noise).item()                
+                predicted_noise = model(noisy_photos, sketches, noise_rates ** 2)
+                val_loss += F.l1_loss(predicted_noise, noise).item()
         val_loss /= len(val_loader)
         
         print(f"Epoch {epoch} | train loss: {avg_loss:.4f} | val loss: {val_loss:.4f}")
-        scheduler.step()
 
         # save checkpoint
         if epoch % save_every == 0 or epoch == epochs:
@@ -298,7 +283,7 @@ def train(
             torch.save(ckpt, output_dir / f"ckpt_epoch{epoch:04d}.pt")
             print(f"Saved checkpoint at epoch {epoch}")
 
-            # generate a sample using a VAL sketch (model has never seen this)
+            # generate a sample using a VAL sketch
             with torch.no_grad():
                 sample_sketch, _ = val_dataset[0]
                 sample_sketch = sample_sketch.unsqueeze(0).to(device)
@@ -307,20 +292,17 @@ def train(
                 num_steps = 200
                 times = torch.linspace(1.0 - 1e-3, 1e-3, num_steps + 1, device=device)
                 
-                ema_model.eval()
                 for i in range(num_steps):
                     t = times[i].view(1, 1, 1, 1)
                     t_next = times[i + 1].view(1, 1, 1, 1)
                     
-                    noise_rate, signal_rate = offset_cosine_diffusion_schedule(t)
-                    noise_rate_next, signal_rate_next = offset_cosine_diffusion_schedule(t_next)
-                    noise_variances = t
-
+                    noise_rate  = torch.sin(t * math.pi / 2)
+                    signal_rate = torch.cos(t * math.pi / 2)
+                    noise_rate_next = torch.sin(t_next * math.pi / 2)
+                    signal_rate_next = torch.cos(t_next * math.pi / 2)
                     
-                    predicted_noise = ema_model(x, sample_sketch, noise_variances)
-                    
-                    #predicted_noise  = model(x, sample_sketch, noise_rate ** 2)
-                    predicted_image  = (x - noise_rate * predicted_noise) / signal_rate
+                    predicted_noise = model(x, sample_sketch, noise_rate ** 2)
+                    predicted_image = (x - noise_rate * predicted_noise) / signal_rate
                     x = signal_rate_next * predicted_image + noise_rate_next * predicted_noise
                 
                 from torchvision.utils import save_image

@@ -4,3 +4,5 @@ sketch/
 __pycache__/
 *.pyc
 *.venv/
+checkpoints/
+checkpoints_2/
