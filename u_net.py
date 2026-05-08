@@ -11,10 +11,6 @@ from pathlib import Path
 import copy
 from tqdm import tqdm
 
-def cosine_diffusion_schedule(t):
-    signal_rates = torch.cos(t * math.pi / 2)
-    noise_rates = torch.sin(t * math.pi / 2)
-    return noise_rates, signal_rates
 
 def offset_cosine_diffusion_schedule(diffusion_times):
     min_signal_rate = 0.02
@@ -162,13 +158,16 @@ def update_ema(ema_model, model, decay=0.999):
 
 
 class SketchPhotoDataset(Dataset):
-    """Loads (sketch, photo) pairs. Filenames must match across both folders."""
+    """Loads (sketch, photo) pairs"""
     def __init__(self, image_dir, sketch_dir, split='train', val_fraction=0.1, seed=42):
          # after shuffle, val = 10% and train = 90% of the data
          # for 5000 images, val will have 500 and train will have 4500
     
         self.image_dir  = Path(image_dir)
         self.sketch_dir = Path(sketch_dir)
+
+        # converting to tensor and normalizing to [-1, 1]
+        self.transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5]*3, [0.5]*3)])
         
         # get all filenames and sort so that we have matching pairs
         all_files = sorted([f.name for f in self.image_dir.iterdir()]) 
@@ -182,25 +181,30 @@ class SketchPhotoDataset(Dataset):
         else:  
             self.filenames = all_files[:n_val]        
 
-    def convert_to_tensor(self, idx):
-        name = self.filenames[idx]
-        photo = Image.open(self.image_dir  / name).convert("RGB")
+    def __getitem__(self, idx):
+        name = self.filenames[idx]    
+        photo = Image.open(self.image_dir / name).convert("RGB")
         sketch = Image.open(self.sketch_dir / name).convert("RGB")
-        return transforms.ToTensor(sketch), transforms.ToTensor(photo)
+        photo = self.transform(photo)
+        sketch = self.transform(sketch)
+        return sketch, photo
+
+    def __len__(self):
+        return len(self.filenames)
 
 
 def train(
-    image_dir = "coco_dataset/images/val2017",
-    sketch_dir = "sketch",
-    output_dir = "checkpoints_2",
+    image_dir = "dataset_large",
+    sketch_dir = "sketch_large",
+    output_dir = "checkpoints",
     image_size = 256,
     batch_size = 64,
-    epochs = 500,
+    epochs = 200,
     lr = 1e-4,
     weight_decay = 1e-4,
     ema_decay = 0.999,
     noise_embedding_size = 64,
-    save_every = 10,
+    save_every = 5,
     val_fraction = 0.1,
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -324,10 +328,12 @@ def train(
                     x = signal_rate_next * predicted_image + noise_rate_next * predicted_noise
                 
                 from torchvision.utils import save_image
-                combined = torch.cat([sample_sketch, x.clamp(0, 1)], dim=0)
+                display_x      = (x.clamp(-1, 1) + 1) / 2
+                display_sketch = (sample_sketch + 1) / 2
+                combined = torch.cat([display_sketch, display_x], dim=0)
                 save_image(combined, output_dir / f"sample_epoch{epoch:04d}.png", nrow=2)
                 print(f"Saved sample image at epoch {epoch}")
-
+                
 
 if __name__ == "__main__":  
    train()
