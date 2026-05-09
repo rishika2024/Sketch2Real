@@ -9,6 +9,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from pathlib import Path
 import copy
+from torchvision.utils import save_image
 from tqdm import tqdm
 
 def cosine_diffusion_schedule(t):
@@ -148,48 +149,57 @@ class ConditionalUNet(nn.Module):
         # concatenate noisy_images and sketches along the channel dimension
         # this is so that the model can condition on the sketch when predicting the noise
         x = torch.cat([noisy_images, sketches], dim=1)
+        # initial conv to get to 64 channels
         x = self.initial_conv(x)
-
+        
+        # create noise embedding
         noise_emb = sinusoidal_embedding(noise_variances, self.noise_embedding_size)
-        noise_emb = noise_emb.view(-1, self.noise_embedding_size, 1, 1)
+        # reshape tensor
+        # noise_emb shape: (B, noise_embedding_size) -> (B, noise_embedding_size, 1, 1) -> (B, noise_embedding_size, image_size, image_size)
+        noise_emb = noise_emb.view(-1, self.noise_embedding_size, 1, 1)      
         noise_emb = F.interpolate(noise_emb, size=(self.image_size, self.image_size), mode="nearest")
-
+        
+        # concatenate noise embedding to the feature maps after the initial conv
         x = torch.cat([x, noise_emb], dim=1)
 
-        skips = []
-        x = self.down1(x, skips)
+        skips = [] # list to store skip connections for the upsampling path
+
+        # downsampling path with skip connections
+        x = self.down1(x, skips) 
         x = self.down2(x, skips)
         x = self.down3(x, skips)
-
+        
+        # bottleneck
         x = self.bottleneck1(x)
         x = self.bottleneck2(x)
         x = self.bottleneck3(x)
 
+        # upsampling path with skip connections
         x = self.up1(x, skips)
         x = self.up2(x, skips)
         x = self.up3(x, skips)
-
+        
+        # return final conv to get back to 3 channels (RGB)
         return self.final_conv(x)
 
 
-def update_ema(ema_model, model, decay=0.999):
-    with torch.no_grad():
+def update_ema(ema_model, model, decay=0.999):    
+    with torch.no_grad(): # no gradients descent for EMA model
         for ema_param, param in zip(ema_model.parameters(), model.parameters()):
             ema_param.data.mul_(decay).add_(param.data, alpha=1 - decay)
 
 
 class SketchPhotoDataset(Dataset):
-    """Loads (sketch, photo) pairs. Filenames must match across both folders."""
+    """Loads (sketch, photo) pairs. Filenames match across both folders."""
     def __init__(self, image_dir, sketch_dir, split='train', val_fraction=0.1, seed=42):
+        # after shuffle, val = 10% and train = 90% of the data
         self.image_dir  = Path(image_dir)
-        self.sketch_dir = Path(sketch_dir)
-
-        all_files = sorted([
-            f.name for f in self.image_dir.iterdir()
-            if f.suffix.lower() in {".jpg", ".jpeg", ".png"}
-        ])
+        self.sketch_dir = Path(sketch_dir)  
         
-        # deterministic shuffle and split
+        # get all filenames and sort so that we have matching pairs
+        all_files = sorted([f.name for f in self.image_dir.iterdir()])            
+        
+       # shuffle and split for test and val
         rng = random.Random(seed)
         rng.shuffle(all_files)
         n_val = int(len(all_files) * val_fraction)
@@ -211,9 +221,9 @@ class SketchPhotoDataset(Dataset):
 
 
 def train(
-    image_dir       = "coco_dataset/images/val2017",
-    sketch_dir      = "sketch",
-    output_dir      = "checkpoints",
+    image_dir       = "dataset_small",
+    sketch_dir      = "sketch_small",
+    output_dir      = "checkpoints_small",
     image_size      = 128,
     batch_size      = 64,
     epochs          = 500,
@@ -227,31 +237,35 @@ def train(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    # data — train and val splits
+    """SPLIT TEST AND VAL DATASET"""
     train_dataset = SketchPhotoDataset(image_dir, sketch_dir, split='train', val_fraction=val_fraction)
     val_dataset   = SketchPhotoDataset(image_dir, sketch_dir, split='val',   val_fraction=val_fraction)
     
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
-                              num_workers=4, pin_memory=True, drop_last=True)
-    val_loader   = DataLoader(val_dataset, batch_size=batch_size, shuffle=False,
-                              num_workers=2, pin_memory=True, drop_last=True)
+    """LOAD DATA"""
+    # num_workers = number of cpu threads for loading data.
+    # pin_memory =  if True, the data loader will copy Tensors into CUDA pinned memory before returning them. (for external gpu)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True, drop_last=True)
+    val_loader   = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True, drop_last=True)
     
     print(f"Train: {len(train_dataset)} pairs, Val: {len(val_dataset)} pairs")
 
-    model = ConditionalUNet(image_size=image_size,
-                            noise_embedding_size=noise_embedding_size).to(device)
+    model = ConditionalUNet(image_size=image_size, noise_embedding_size=noise_embedding_size).to(device)
+    # p.numel() gives the number of parameters in the model
     print(f"Parameters: {sum(p.numel() for p in model.parameters()) / 1e6:.2f}M")
-
+    
+    # create EMA model as a copy of the original model
+    #  Not updating the weights with gradients
     ema_model = copy.deepcopy(model)
     for p in ema_model.parameters():
         p.requires_grad_(False)
-
+    
+    # using AdamW optimizer
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # ---------- training loop ----------
+    """TRAINING LOOP"""
 
     for epoch in range(1, epochs + 1):
         model.train()
@@ -260,32 +274,34 @@ def train(
         pbar = tqdm(train_loader, desc=f"Epoch {epoch}/{epochs}")
         for sketches, photos in pbar:
             sketches = sketches.to(device)
-            photos   = photos.to(device)
-            B        = photos.shape[0]
-
-            t = torch.rand(B, 1, 1, 1, device=device)
+            photos = photos.to(device)
+            B  = photos.shape[0] # batch size 
+            
+            # diffusion step t is randomly sampled for each image in the batch
+            #  compute the corresponding noise and signal rates using the cosine schedule
+            t = torch.rand(B, 1, 1, 1, device=device) 
             noise_rates, signal_rates = cosine_diffusion_schedule(t)
-
             noisy_photos, noise = add_noise(photos, noise_rates, signal_rates)
-
+                        
             noise_variances = noise_rates ** 2
             predicted_noise = model(noisy_photos, sketches, noise_variances)
-
+            
+            # using L1 loss
             loss = F.l1_loss(predicted_noise, noise)
 
-            optimizer.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            optimizer.step()
+            optimizer.zero_grad() # reset gradients to zero before backpropagation
+            loss.backward() # compute gradients
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # gradient clipping to prevent exploding gradients
+            optimizer.step() # update model weights based on computed gradients
 
-            update_ema(ema_model, model, decay=ema_decay)
+            update_ema(ema_model, model, decay=ema_decay) # update EMA model weights
 
-            epoch_loss += loss.item()
+            epoch_loss += loss.item() 
             pbar.set_postfix(loss=f"{loss.item():.4f}")
 
         avg_loss = epoch_loss / len(train_loader)
 
-        # validation loss
+        """VALIDATION LOOP"""
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
@@ -319,24 +335,28 @@ def train(
                 sample_sketch, _ = val_dataset[0]
                 sample_sketch = sample_sketch.unsqueeze(0).to(device)
                 
+                # pure noise image to start the reverse diffusion process
                 x = torch.randn(1, 3, image_size, image_size, device=device)
                 num_steps = 200
+
+                # diffusion timesteps from 1 to 0
                 times = torch.linspace(1.0 - 1e-3, 1e-3, num_steps + 1, device=device)
                 
                 for i in range(num_steps):
                     t = times[i].view(1, 1, 1, 1)
                     t_next = times[i + 1].view(1, 1, 1, 1)
                     
-                    noise_rate  = torch.sin(t * math.pi / 2)
-                    signal_rate = torch.cos(t * math.pi / 2)
-                    noise_rate_next = torch.sin(t_next * math.pi / 2)
-                    signal_rate_next = torch.cos(t_next * math.pi / 2)
+                    noise_rate, signal_rate = cosine_diffusion_schedule(t)
+                    noise_rate_next, signal_rate_next = cosine_diffusion_schedule(t_next)
+                    noise_variances = noise_rate ** 2
                     
-                    predicted_noise = model(x, sample_sketch, noise_rate ** 2)
+                    # predict the noise using the model
+                    # calculate the predicted image at the current timestep using the predicted noise and the noisy image
+                    predicted_noise = model(x, sample_sketch, noise_variances)
                     predicted_image = (x - noise_rate * predicted_noise) / signal_rate
                     x = signal_rate_next * predicted_image + noise_rate_next * predicted_noise
                 
-                from torchvision.utils import save_image
+                # concatenate the input sketch and the generated image for visualization
                 combined = torch.cat([sample_sketch, x.clamp(0, 1)], dim=0)
                 save_image(combined, output_dir / f"sample_epoch{epoch:04d}.png", nrow=2)
                 print(f"Saved sample image at epoch {epoch}")
