@@ -30,21 +30,21 @@ The U-Net Architcture is as follows:
 
 #### ENCODER (Downsampling)
 
- DownBlock 1:  → 32 channels
- DownBlock 2:  → 64 channels
- DownBlock 3:  → 128 channels
+ DownBlock 1:  => 32 channels
+ DownBlock 2:  => 64 channels
+ DownBlock 3:  => 128 channels
 
 #### (Bottleneck)
 
- ResidualBlock → 256
- ResidualBlock → 256
- ResidualBlock → 128
+ ResidualBlock => 256
+ ResidualBlock => 256
+ ResidualBlock => 128
 
 #### DECODER (Upsampling)
 
- UpBlock 1:  → 64 channels  (+ skip)
- UpBlock 2:  → 32 channels  (+ skip)
- UpBlock 3:  → 16 channels  (+ skip)
+ UpBlock 1:  => 64 channels  (+ skip)
+ UpBlock 2:  => 32 channels  (+ skip)
+ UpBlock 3:  => 16 channels  (+ skip)
 
 #### Final Conv (16 → 3)
 
