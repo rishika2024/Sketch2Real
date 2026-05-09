@@ -65,6 +65,11 @@ The noisy image for the next step is then re-composed using the next step's rate
 
 This process repeats until x converges to a realistic image conditioned on the sketch. 
 
+### Problems with this model:
+#### While I did get images resembling a realistic image, at around the 160th epoch, the model stopped getting better.
+#### The variance loss and training loss stopped improving much. 
+#### This was probably because I used only 5K images
+
 
 
 
