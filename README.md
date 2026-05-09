@@ -3,7 +3,7 @@
 #### Extra Criteria: GUI
 #
 ## Getting the Dataset
- I used the coco_dataset for this project. I generate the sketch, do the following steps:
+ I used the coco_dataset for this project. I generate the sketch, I do the following steps:
 #
  1. Convert it to Grey Scale
  2. Invert the grey scale
