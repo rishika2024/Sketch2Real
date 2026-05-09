@@ -124,6 +124,9 @@ In this model, I used 256 x 256 size for the image and had 118k images in my dat
 
 ### Both the models generate reasonable ouputs using the actual model and generate random noise using the EMA model. This is because the weights change a lot in the beginning (I did not run too many epochs) and EMA generalizes those weights creating an average that cannot be used
 
+# This was the Generated image using the EMA model at the 70th epoch
+<img src="readme_images/ema_70.png" width="30%">
+
 
 
 

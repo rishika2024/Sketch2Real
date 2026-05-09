@@ -123,8 +123,8 @@ def generate(sketch_image, epoch, num_steps, use_ema, seed):
 available_epochs = get_available_epochs()
 default_epoch = available_epochs[-1] if available_epochs else 50
 
-with gr.Blocks(title="Sketch to Photo Diffusion") as demo:
-    gr.Markdown("# Sketch to Photo")
+with gr.Blocks(title="Sketch 2 Real Diffusion") as demo:
+    gr.Markdown("# Sketch 2 Real")
     gr.Markdown("Upload a sketch and the model generates a photo from it.")
     
     with gr.Row():
