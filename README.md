@@ -18,7 +18,7 @@
 ## Model Architechture:
 ### I tested 2 models
 ### Model - 1 (u_net2.py)
-In this model, I used 128 x 128 size for the image and had 5k images in my dataset
+In this model, I used 128 x 128 size for the image and had 5k images in my dataset from the val2017
 * **Noise schedule used:** Cosine Noise Schedule
 * **Optimiser:** AdamW, weight decay = 1e-3
 * **Loss Function:** L1
@@ -87,7 +87,7 @@ This process repeats until x converges to a realistic image conditioned on the s
 
 
 ### Model-2 (u_net.py)
-In this model, I used 256 x 256 size for the image and had 118k images in my dataset
+In this model, I used 256 x 256 size for the image and had 118k images in my dataset from the train2017
 * **Noise schedule used:** Offset Cosine Noise Schedule
 * **Optimiser:** AdamW, weight decay = 1e-4 + CosineAnnealingLR as learning rate scheduler (changes the learning rate)
 * **Loss Function:** MSE
