@@ -225,7 +225,7 @@ class SketchPhotoDataset(Dataset):
 def train(
     image_dir = "dataset_large",
     sketch_dir = "sketch_large",
-    output_dir = "checkpoints",
+    output_dir = "checkpoints_large",
     image_size = 256,
     batch_size = 64,
     epochs = 200,

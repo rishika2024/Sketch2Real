@@ -51,10 +51,25 @@ def photo_to_colored_edges(train_path, dataset_path, output_path, size):
 
 if __name__ == "__main__":   
 
+    while True:
+        size = int(input("Enter desired output image size (256 or 128): "))
+        if size not in [128, 256]:
+            print("Invalid size. Please enter 256 or 128.")
+        else:
+            break
+
     root = Path(__file__).parent.parent
-    train_dir = root / "Sketch2Real" / "train2017"
-    dataset_dir = root / "Sketch2Real" / "dataset_large"
-    sketch_dir = root / "Sketch2Real" / "sketch_large"
+    if size == 256:
+        print("Processing 256x256 images...")
+        train_dir = root / "Sketch2Real" / "train2017"
+        dataset_dir = root / "Sketch2Real" / "dataset_large"
+        sketch_dir = root / "Sketch2Real" / "sketch_large"
+
+    else:
+        print("Processing 128x128 images...")
+        train_dir = root / "Sketch2Real" / "train2017"
+        dataset_dir = root / "Sketch2Real" / "dataset_small"
+        sketch_dir = root / "Sketch2Real" / "sketch_small"
     
 
     train_path = Path(train_dir)
@@ -81,7 +96,7 @@ if __name__ == "__main__":
         ds_file.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            photo_to_colored_edges(str(img_file), str(ds_file), str(out_file), 256)            
+            photo_to_colored_edges(str(img_file), str(ds_file), str(out_file), size)            
             if count % 500 == 0:
                 print(f"{count}/5000 images done...")
         except Exception as e:
