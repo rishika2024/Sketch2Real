@@ -123,20 +123,25 @@ class ConditionalUNet(nn.Module):
         
         # since noisy image and sketch are concatenated, the input channels = 3 (image) + 3 (sketch) = 6
         self.initial_conv = nn.Conv2d(6, 64, kernel_size=1)
+        # no. of channels = 64(initial conv) + noise_embedding_size (after concatenating noise embedding) = 128
         in_after_concat = 64 + noise_embedding_size
-
+        
+        # downsampling path feature channels: 128 -> 64 -> 128 -> 256
         self.down1 = DownBlock(in_after_concat, 64,  block_depth=2)
         self.down2 = DownBlock(64,  128, block_depth=2)
         self.down3 = DownBlock(128, 256, block_depth=2)
 
+        # bottleneck path feature channels: 256 -> 512 -> 512 -> 256
         self.bottleneck1 = ResidualBlock(256, 512)
         self.bottleneck2 = ResidualBlock(512, 512)
         self.bottleneck3 = ResidualBlock(512, 256)
-
+        
+        # upsampling path feature channels: 256 -> 128 -> 64 -> 32
         self.up1 = UpBlock(256, 128, block_depth=2, skip_channels=256)
         self.up2 = UpBlock(128, 64,  block_depth=2, skip_channels=128)
         self.up3 = UpBlock(64,  32,  block_depth=2, skip_channels=64)
-
+        
+        # final conv to get back to 3 channels (RGB)
         self.final_conv = nn.Conv2d(32, 3, kernel_size=1)
         
         # initialize final conv's weight and bias to zero
