@@ -11,8 +11,8 @@
  5. Get the edges by binary_thresholding
  6. Replace the egdes with the original colors
 
- {{< figure src="dataset_large/000000204536.jpg" width="60%">}}
-  {{< figure src="sketch_large/000000204536.jpg" width="60%">}}
+ {{< figure src="readme_images/real/000000204536.jpg" width="60%">}}
+  {{< figure src="readme_images/sketch/000000204536.jpg" width="60%">}}
 
 ## Model Architechture:
 ### I tested 2 models
