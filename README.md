@@ -162,15 +162,15 @@ https://drive.google.com/drive/folders/1T-G_GvM5_VO65vhPDhPmF1zeAT_-6b3-?usp=dri
 
 ## Downloading and Generating the dataset
 
-wget http://images.cocodataset.org/zips/train2017.zip
-unzip train2017.zip
+`wget http://images.cocodataset.org/zips/train2017.zip`
+`unzip train2017.zip`
 
 * run the file color_to_sketch.py using the command and type 128 or 256, as required: `python3 color_to_sketch`
 
 ## Training the model
-If you generated images of size 128 x 128: run the u_net2 model: `python3 u_net2.py`
+* If you generated images of size 128 x 128: run the u_net2 model: `python3 u_net2.py`
 
-If you generated images of size 256 x 256: run the u_net model: `python3 u_net.py`
+* If you generated images of size 256 x 256: run the u_net model: `python3 u_net.py`
 
 
 
