@@ -149,14 +149,14 @@ In this model, I used 256 x 256 size for the image and had 118k images in my dat
 ## Using the GUI
 <img src="readme_images/gui.png" width="30%">
 
-** Download the checkpoints folder from this drive:
+* Download the checkpoints folder from this drive:
 
 https://drive.google.com/drive/folders/1T-G_GvM5_VO65vhPDhPmF1zeAT_-6b3-?usp=drive_link
 
-** run the file gui.py using the command: 
+* run the file gui.py using the command: 
 `python3 gui.py`
 
-** Click the URL generated
+* Click the URL generated
 
 
 
