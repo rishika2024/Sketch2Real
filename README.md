@@ -11,14 +11,17 @@
  5. Get the edges by binary_thresholding
  6. Replace the egdes with the original colors
 
+ {{< figure src="dataset_large/000000204536.jpg" width="60%">}}
+  {{< figure src="sketch_large/000000204536.jpg" width="60%">}}
+
 ## Model Architechture:
 ### I tested 2 models
 ### Model - 1
 In this model, I used 128 x 128 size for the image and had 5k images in my dataset
-1. *Noise schedule used:* Cosine Noise Schedule
-2. *Optimiser:* AdamW
-3. *Loss Function:* L1
-4. *Activation Function:* SILU
+1. **Noise schedule used:** Cosine Noise Schedule
+2. **Optimiser:** AdamW
+3. **Loss Function:** L1
+4. **Activation Function:** SILU
 
 The U-Net Architcture is as follows:  
 #### INPUT
