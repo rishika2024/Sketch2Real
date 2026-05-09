@@ -12,7 +12,7 @@
  5. Get the edges by binary_thresholding
  6. Replace the egdes with the original colors
 
-  <img src="readme_images/sketch_generation.png" width="60%">
+  <img src="readme_images_and_videos/sketch_generation.png" width="60%">
  
 
 ## Model Architechture:
