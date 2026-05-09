@@ -25,16 +25,19 @@ def offset_cosine_diffusion_schedule(diffusion_times):
 
     return noise_rates, signal_rates
 
-# forward process: x_t = signal_rate * x_0 + noise_rate * noise
-def add_noise(colored_images, noise_rates, signal_rates):
-    noise = torch.randn_like(colored_images)
-    noisy_images = signal_rates * colored_images + noise_rates * noise
-    return noisy_images, noise
+def add_noise(colored_image, noise_rates, signal_rates):
+    # forward process: x_t = signal_rate * x_0 + noise_rate * noise(epsilon)
+    noise = torch.randn_like(colored_image) # create noise with same shape as colored_image
+    noisy_image = signal_rates * colored_image + noise_rates * noise
+    return noisy_image, noise
 
-def sinusoidal_embedding(x, embedding_dim=32):
-    frequencies = torch.exp(torch.linspace(math.log(1.0), math.log(1000.0), embedding_dim // 2, device=x.device))
+def sinusoidal_embedding(t, embedding_dim=32):
+    # build a vector of frequencies that are log-uniformly spaced between 1 and 1000
+    # angular speed = 2 * pi * frequency, so that we get full cycles at different rates
+    # and then concatenate sin and cos of these angular speeds times t to get the embedding
+    frequencies = torch.exp(torch.linspace(math.log(1.0), math.log(1000.0), embedding_dim // 2, device=t.device))
     angular_speeds = 2.0 * math.pi * frequencies
-    embeddings = torch.cat([torch.sin(angular_speeds * x), torch.cos(angular_speeds * x)], dim=1)
+    embeddings = torch.cat([torch.sin(angular_speeds * t), torch.cos(angular_speeds * t)], dim=1)
     return embeddings
 
 
@@ -42,6 +45,7 @@ class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         # since we add the input to the output, they must have the same number of channels
+        # output = conv2(SILU(conv1(batch_norm(input)))) + residual(input)
         if in_channels != out_channels:            
             self.residual_conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
         else:
@@ -63,7 +67,10 @@ class DownBlock(nn.Module):
     def __init__(self, in_channels, out_channels, block_depth):
         super().__init__()
         self.block_depth = block_depth
-        self.res_blocks = nn.ModuleList()
+        # list of residual blocks
+        # the first block goes from in_channels to out_channels
+        # and the rest go from out_channels to out_channels
+        self.res_blocks = nn.ModuleList() 
         for i in range(block_depth):
             if i == 0:
                 self.res_blocks.append(ResidualBlock(in_channels, out_channels))
@@ -71,10 +78,14 @@ class DownBlock(nn.Module):
                 self.res_blocks.append(ResidualBlock(out_channels, out_channels))
 
     def forward(self, x, skips):
+        # for each residual block
+        # input_i+1 = residualblock(input_i)
+        # output = avg_pool2d(final_residual_output)
+        # skips = list of outpiuts of each residual block
         for block in self.res_blocks:
             x = block(x)
             skips.append(x)
-        x = F.avg_pool2d(x, kernel_size=2)
+        x = F.avg_pool2d(x, kernel_size=2) # downsample by 2x
         return x
 
 
@@ -82,7 +93,10 @@ class UpBlock(nn.Module):
     def __init__(self, in_channels, out_channels, block_depth, skip_channels):
         super().__init__()
         self.block_depth = block_depth
-        self.res_blocks = nn.ModuleList()
+        # list of residual blocks
+        # the first block goes from in_channels to out_channels
+        # and the rest go from out_channels to out_channels
+        self.res_blocks = nn.ModuleList()        
         for i in range(block_depth):
             if i == 0:
                 in_ch = in_channels + skip_channels
@@ -91,11 +105,13 @@ class UpBlock(nn.Module):
             self.res_blocks.append(ResidualBlock(in_ch, out_channels))
 
     def forward(self, x, skips):
-        x = F.interpolate(x, scale_factor=2, mode='nearest')
+        x = F.interpolate(x, scale_factor=2, mode='nearest') # upsample by 2x
         for block in self.res_blocks:
-            skip = skips.pop()
-            x = torch.cat([x, skip], dim=1)
-            x = block(x)
+            # for each residual block
+            # input_i+1 = residualblock(concat(input_i, corresponding_skip))
+            skip = skips.pop() # get the corresponding skip connection from the downsampling path
+            x = torch.cat([x, skip], dim=1) # concatenate along channel dimension
+            x = block(x)  
         return x
 
 
@@ -104,7 +120,8 @@ class ConditionalUNet(nn.Module):
         super().__init__()
         self.image_size = image_size
         self.noise_embedding_size = noise_embedding_size
-
+        
+        # since noisy image and sketch are concatenated, the input channels = 3 (image) + 3 (sketch) = 6
         self.initial_conv = nn.Conv2d(6, 64, kernel_size=1)
         in_after_concat = 64 + noise_embedding_size
 
@@ -121,11 +138,15 @@ class ConditionalUNet(nn.Module):
         self.up3 = UpBlock(64,  32,  block_depth=2, skip_channels=64)
 
         self.final_conv = nn.Conv2d(32, 3, kernel_size=1)
-
-        nn.init.zeros_(self.final_conv.weight)
+        
+        # initialize final conv's weight and bias to zero
+        # so that at the start of training, the model just predicts noise = 0 and x_t = x_0
+        nn.init.zeros_(self.final_conv.weight) 
         nn.init.zeros_(self.final_conv.bias)
 
     def forward(self, noisy_images, sketches, noise_variances):
+        # concatenate noisy_images and sketches along the channel dimension
+        # this is so that the model can condition on the sketch when predicting the noise
         x = torch.cat([noisy_images, sketches], dim=1)
         x = self.initial_conv(x)
 
@@ -152,17 +173,18 @@ class ConditionalUNet(nn.Module):
 
 
 def update_ema(ema_model, model, decay=0.999):
-    with torch.no_grad():
+    # no gradient descent on ema model
+    #just update the weights based on the current model
+    with torch.no_grad():     
         for ema_param, param in zip(ema_model.parameters(), model.parameters()):
             ema_param.data.mul_(decay).add_(param.data, alpha=1 - decay)
 
 
 class SketchPhotoDataset(Dataset):
-    """Loads (sketch, photo) pairs"""
+    """Loads (sketch, photo) pairs. Filenames must match across both folders."""
     def __init__(self, image_dir, sketch_dir, split='train', val_fraction=0.1, seed=42):
          # after shuffle, val = 10% and train = 90% of the data
-         # for 5000 images, val will have 500 and train will have 4500
-    
+
         self.image_dir  = Path(image_dir)
         self.sketch_dir = Path(sketch_dir)
 
@@ -182,7 +204,8 @@ class SketchPhotoDataset(Dataset):
             self.filenames = all_files[:n_val]        
 
     def __getitem__(self, idx):
-        name = self.filenames[idx]    
+        name = self.filenames[idx]
+    
         photo = Image.open(self.image_dir / name).convert("RGB")
         sketch = Image.open(self.sketch_dir / name).convert("RGB")
         photo = self.transform(photo)
@@ -196,9 +219,9 @@ class SketchPhotoDataset(Dataset):
 def train(
     image_dir = "dataset_large",
     sketch_dir = "sketch_large",
-    output_dir = "checkpoints",
+    output_dir = "checkpoints_2",
     image_size = 256,
-    batch_size = 64,
+    batch_size = 16,
     epochs = 200,
     lr = 1e-4,
     weight_decay = 1e-4,
@@ -328,7 +351,7 @@ def train(
                     x = signal_rate_next * predicted_image + noise_rate_next * predicted_noise
                 
                 from torchvision.utils import save_image
-                display_x      = (x.clamp(-1, 1) + 1) / 2
+                display_x  = (x.clamp(-1, 1) + 1) / 2
                 display_sketch = (sample_sketch + 1) / 2
                 combined = torch.cat([display_sketch, display_x], dim=0)
                 save_image(combined, output_dir / f"sample_epoch{epoch:04d}.png", nrow=2)
