@@ -15,38 +15,39 @@
 ### I tested 2 models
 ### Model - 1
 In this model, I used 128 x 128 size for the image and had 5k images in my dataset
-To add noise to the images I used cosine diffusion schedule
+1. *Noise schedule used:* Cosine Noise Schedule
+2. *Optimiser:* AdamW
+3. *Loss Function:* L1
+4. *Activation Function:* SILU
+
 The U-Net Architcture is as follows:  
 #### INPUT
  (noisy image + sketch)
          ↓
  Initial Conv (6 → 64)
          ↓
- + timestep embedding added
-         ↓
- ────────────────────────────
+ + timestep embedding added         
+
 #### ENCODER (Downsampling)
-────────────────────────────
+
  DownBlock 1:  → 32 channels
  DownBlock 2:  → 64 channels
  DownBlock 3:  → 128 channels
-          ↓
-────────────────────────────
+
 #### (Bottleneck)
-────────────────────────────
+
  ResidualBlock → 256
  ResidualBlock → 256
  ResidualBlock → 128
-         ↓
-────────────────────────────
+
 #### DECODER (Upsampling)
-────────────────────────────
+
  UpBlock 1:  → 64 channels  (+ skip)
  UpBlock 2:  → 32 channels  (+ skip)
  UpBlock 3:  → 16 channels  (+ skip)
-        ↓
+
 #### Final Conv (16 → 3)
-         ↓
+
 #### OUTPUT
  (predicted noise image)
 
