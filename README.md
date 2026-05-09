@@ -19,12 +19,12 @@
 ### I tested 2 models
 ### Model - 1
 In this model, I used 128 x 128 size for the image and had 5k images in my dataset
-1. **Noise schedule used:** Cosine Noise Schedule
-2. **Optimiser:** AdamW, weight decay = 1e-3
-3. **Loss Function:** L1
-4. **Activation Function:** SILU
-5. **Batch Size:** 64
-6. Normalizing the image tensor to [0,1]
+* **Noise schedule used:** Cosine Noise Schedule
+* **Optimiser:** AdamW, weight decay = 1e-3
+* **Loss Function:** L1
+* **Activation Function:** SILU
+* **Batch Size:** 64
+* Normalizing the image tensor to [0,1]
 
 ### The Conditional U-Net Architcture is as follows:  
 #### INPUT
@@ -88,12 +88,12 @@ This process repeats until x converges to a realistic image conditioned on the s
 
 ### Model-2
 In this model, I used 256 x 256 size for the image and had 118k images in my dataset
-1. **Noise schedule used:** Offset Cosine Noise Schedule
-2. **Optimiser:** AdamW, weight decay = 1e-4 + CosineAnnealingLR as learning rate scheduler (changes the learning rate)
-3. **Loss Function:** MSE
-4. **Activation Function:** SILU
-5. **Batch Size:** 64
-6. Normalize the image tensors to [-1,1]
+* **Noise schedule used:** Offset Cosine Noise Schedule
+* **Optimiser:** AdamW, weight decay = 1e-4 + CosineAnnealingLR as learning rate scheduler (changes the learning rate)
+* **Loss Function:** MSE
+* **Activation Function:** SILU
+* **Batch Size:** 64
+* Normalize the image tensors to [-1,1]
 
 ### The Conditional U-Net Architcture is as follows:  
 #### INPUT
