@@ -22,31 +22,27 @@ In this model, I used 128 x 128 size for the image and had 5k images in my datas
 
 The U-Net Architcture is as follows:  
 #### INPUT
- (noisy image + sketch)
-         ↓
- Initial Conv (6 → 64)
-         ↓
- + timestep embedding added         
+ (concatenating noisy image + sketch) -> Initial Conv (6 -> 64) + timestep embedding added (128 channels)      
 
 #### ENCODER (Downsampling)
 
- DownBlock 1:  => 32 channels
- DownBlock 2:  => 64 channels
- DownBlock 3:  => 128 channels
+ DownBlock 1:  128 -> 32 channels
+ DownBlock 2:  32 -> 64 channels
+ DownBlock 3:  64 -> 128 channels
 
 #### (Bottleneck)
 
- ResidualBlock => 256
- ResidualBlock => 256
- ResidualBlock => 128
+ ResidualBlock1: 128 -> 256
+ ResidualBlock2: 256 -> 256
+ ResidualBlock3: 256 -> 128
 
 #### DECODER (Upsampling)
 
- UpBlock 1:  => 64 channels  (+ skip)
- UpBlock 2:  => 32 channels  (+ skip)
- UpBlock 3:  => 16 channels  (+ skip)
+ UpBlock 1:  128 -> 64 channels  (+ skip)
+ UpBlock 2:  64 -> 32 channels  (+ skip)
+ UpBlock 3:  32 -> 16 channels  (+ skip)
 
-#### Final Conv (16 → 3)
+#### Final Conv (16 -> 3)
 
 #### OUTPUT
  (predicted noise image)
