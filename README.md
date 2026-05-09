@@ -147,7 +147,7 @@ In this model, I used 256 x 256 size for the image and had 118k images in my dat
 <img src="readme_images/ema_70.png" width="30%">
 
 ## Using the GUI
-<img src="readme_images/gui.png" width="30%">
+<img src="readme_images/gui.png" width="100%">
 
 * Download the checkpoints folder from this drive:
 
