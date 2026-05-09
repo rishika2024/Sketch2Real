@@ -11,8 +11,8 @@
  5. Get the edges by binary_thresholding
  6. Replace the egdes with the original colors
 
-<img src="readme_images/real/000000204536.jpg" width="60%">
-<img src="readme_images/sketch/000000204536.jpg" width="60%">
+<img src="readme_images/real/000000204536.jpg" width="30%">
+<img src="readme_images/sketch/000000204536.jpg" width="30%">
 
 ## Model Architechture:
 ### I tested 2 models
