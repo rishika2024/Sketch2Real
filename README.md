@@ -20,9 +20,11 @@
 ### Model - 1
 In this model, I used 128 x 128 size for the image and had 5k images in my dataset
 1. **Noise schedule used:** Cosine Noise Schedule
-2. **Optimiser:** AdamW
+2. **Optimiser:** AdamW, weight decay = 1e-3
 3. **Loss Function:** L1
 4. **Activation Function:** SILU
+5. **Batch Size:** 64
+6. Normalizing the image tensor to [0,1]
 
 ### The Conditional U-Net Architcture is as follows:  
 #### INPUT
@@ -66,9 +68,50 @@ The noisy image for the next step is then re-composed using the next step's rate
 This process repeats until x converges to a realistic image conditioned on the sketch. 
 
 ### Problems with this model:
-#### While I did get images resembling a realistic image, at around the 160th epoch, the model stopped getting better.
-#### The variance loss and training loss stopped improving much. 
-#### This was probably because I used only 5K images
+#### While I did get images resembling a realistic image, at around the 160th epoch, the model stopped getting better.The variance loss and training loss stopped improving much. This was probably because I used only 5K images
+### Hence I made a 2nd model with improvements
+
+
+### Model-2
+In this model, I used 256 x 256 size for the image and had 118k images in my dataset
+1. **Noise schedule used:** Offset Cosine Noise Schedule
+2. **Optimiser:** AdamW, weight decay = 1e-4 + CosineAnnealingLR as learning rate scheduler (changes the learning rate)
+3. **Loss Function:** MSE
+4. **Activation Function:** SILU
+5. **Batch Size:** 64
+6. Normalize the image tensors to [-1,1]
+
+### The Conditional U-Net Architcture is as follows:  
+#### INPUT
+ (concatenating noisy image + sketch) -> Initial Conv (6 -> 64) + timestep embedding added (128 channels)      
+
+#### ENCODER (Downsampling)
+
+ DownBlock 1:  128 -> 64 channels
+ DownBlock 2:  64 -> 128 channels
+ DownBlock 3:  128 -> 256 channels
+
+#### (Bottleneck)
+
+ ResidualBlock1: 256 -> 512
+ ResidualBlock2: 512 -> 512
+ ResidualBlock3: 512 -> 256
+
+#### DECODER (Upsampling)
+
+ UpBlock 1:  256 -> 128 channels  (+ skip)
+ UpBlock 2:  128 -> 64 channels  (+ skip)
+ UpBlock 3:  64 -> 32 channels  (+ skip)
+
+#### Final Conv (32 -> 3)
+
+#### OUTPUT
+ (predicted noise image)
+
+### Both the models generate reasonable ouputs using the actual model and generate random noise using the EMA model. This is because the weights change a lot in the beginning (I did not run too many epochs) and EMA generalizes those weights creating an average that cannot be used
+
+
+
 
 
 

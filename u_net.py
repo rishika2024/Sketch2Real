@@ -129,7 +129,7 @@ class ConditionalUNet(nn.Module):
         
         # downsampling path feature channels: 128 -> 64 -> 128 -> 256
         self.down1 = DownBlock(in_after_concat, 64,  block_depth=2)
-        self.down2 = DownBlock(64,  128, block_depth=2)
+        self.down2 = DownBlock(64, 128, block_depth=2)
         self.down3 = DownBlock(128, 256, block_depth=2)
 
         # bottleneck path feature channels: 256 -> 512 -> 512 -> 256
@@ -139,8 +139,8 @@ class ConditionalUNet(nn.Module):
         
         # upsampling path feature channels: 256 -> 128 -> 64 -> 32
         self.up1 = UpBlock(256, 128, block_depth=2, skip_channels=256)
-        self.up2 = UpBlock(128, 64,  block_depth=2, skip_channels=128)
-        self.up3 = UpBlock(64,  32,  block_depth=2, skip_channels=64)
+        self.up2 = UpBlock(128, 64, block_depth=2, skip_channels=128)
+        self.up3 = UpBlock(64, 32, block_depth=2, skip_channels=64)
         
         # final conv to get back to 3 channels (RGB)
         self.final_conv = nn.Conv2d(32, 3, kernel_size=1)
