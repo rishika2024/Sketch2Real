@@ -221,31 +221,31 @@ class SketchPhotoDataset(Dataset):
 
 
 def train(
-    image_dir       = "dataset_small",
-    sketch_dir      = "sketch_small",
-    output_dir      = "checkpoints_small",
-    image_size      = 128,
-    batch_size      = 64,
-    epochs          = 500,
-    lr              = 1e-3,
-    weight_decay    = 1e-4,
-    ema_decay       = 0.999,
+    image_dir  = "dataset_small",
+    sketch_dir = "sketch_small",
+    output_dir = "checkpoints_small",
+    image_size = 128,
+    batch_size = 64,
+    epochs = 500,
+    lr = 1e-3,
+    weight_decay = 1e-4,
+    ema_decay = 0.999,
     noise_embedding_size = 64,
-    save_every      = 10,
-    val_fraction    = 0.1,
+    save_every = 10,
+    val_fraction = 0.1,
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
     """SPLIT TEST AND VAL DATASET"""
     train_dataset = SketchPhotoDataset(image_dir, sketch_dir, split='train', val_fraction=val_fraction)
-    val_dataset   = SketchPhotoDataset(image_dir, sketch_dir, split='val',   val_fraction=val_fraction)
+    val_dataset = SketchPhotoDataset(image_dir, sketch_dir, split='val',   val_fraction=val_fraction)
     
     """LOAD DATA"""
     # num_workers = number of cpu threads for loading data.
     # pin_memory =  if True, the data loader will copy Tensors into CUDA pinned memory before returning them. (for external gpu)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True, drop_last=True)
-    val_loader   = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True, drop_last=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True, drop_last=True)
     
     print(f"Train: {len(train_dataset)} pairs, Val: {len(val_dataset)} pairs")
 
