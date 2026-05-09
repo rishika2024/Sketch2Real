@@ -1,10 +1,5 @@
 coco_dataset/
 sketch/
-*.zip
-__pycache__/
-*.pyc
-*.venv/
-checkpoints/
 checkpoints_2/
 coco_dataset/
 sketch/
@@ -16,7 +11,7 @@ sketch2real_data/
 __pycache__/
 *.pyc
 *.venv/
-*.pt/
 diagnostic_epoch45.png
 *.tar/
 check.py
+checkpoints/
