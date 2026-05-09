@@ -69,7 +69,8 @@ This process repeats until x converges to a realistic image conditioned on the s
 
 ### Problems with this model:
 #### While I did get images resembling a realistic image, at around the 160th epoch, the model stopped getting better.The variance loss and training loss stopped improving much. This was probably because I used only 5K images
-### Hence I made a 2nd model with improvements. Below are images from the epochs 160, 170, 180, 190, 200, 210, 220, 230, 240
+
+#### Hence I made a 2nd model with improvements. Below are images from the epochs 160, 170, 180, 190, 200, 210, 220, 230, 240
 
 
 <div align="center">
