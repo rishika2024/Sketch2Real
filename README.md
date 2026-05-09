@@ -74,15 +74,15 @@ This process repeats until x converges to a realistic image conditioned on the s
 
 
 <div align="center">
-  <img src="readme_images/small/sample_epoch0160.png" width="30%">
-  <img src="readme_images/small/sample_epoch0170.png" width="30%">
-  <img src="readme_images/small/sample_epoch0180.png" width="30%">
-  <img src="readme_images/small/sample_epoch0190.png" width="30%">
-  <img src="readme_images/small/sample_epoch0200.png" width="30%">
-  <img src="readme_images/small/sample_epoch0210.png" width="30%">
-  <img src="readme_images/small/sample_epoch0220.png" width="30%">
-  <img src="readme_images/small/sample_epoch0230.png" width="30%">
-  <img src="readme_images/small/sample_epoch0240.png" width="30%">
+  <img src="readme_images_and_videos/small/sample_epoch0160.png" width="30%">
+  <img src="readme_images_and_videos/small/sample_epoch0170.png" width="30%">
+  <img src="readme_images_and_videos/small/sample_epoch0180.png" width="30%">
+  <img src="readme_images_and_videos/small/sample_epoch0190.png" width="30%">
+  <img src="readme_images_and_videos/small/sample_epoch0200.png" width="30%">
+  <img src="readme_images_and_videos/small/sample_epoch0210.png" width="30%">
+  <img src="readme_images_and_videos/small/sample_epoch0220.png" width="30%">
+  <img src="readme_images_and_videos/small/sample_epoch0230.png" width="30%">
+  <img src="readme_images_and_videos/small/sample_epoch0240.png" width="30%">
 </div>
 
 
@@ -125,29 +125,29 @@ In this model, I used 256 x 256 size for the image and had 118k images in my dat
 #### Generated images below are from epochs 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70
 
  <div align="center">
-  <img src="readme_images/large/epoch0005.png" width="30%">
-  <img src="readme_images/large/epoch0010.png" width="30%">
-  <img src="readme_images/large/epoch0015.png" width="30%">
-  <img src="readme_images/large/epoch0020.png" width="30%">
-  <img src="readme_images/large/epoch0025.png" width="30%">
-  <img src="readme_images/large/epoch0030.png" width="30%">
-  <img src="readme_images/large/epoch0035.png" width="30%">
-  <img src="readme_images/large/epoch0040.png" width="30%">
-  <img src="readme_images/large/epoch0045.png" width="30%">
-  <img src="readme_images/large/epoch0050.png" width="30%">
-  <img src="readme_images/large/epoch0055.png" width="30%">
-  <img src="readme_images/large/epoch0060.png" width="30%">
-  <img src="readme_images/large/epoch0065.png" width="30%">
-  <img src="readme_images/large/epoch0070.png" width="30%">
+  <img src="readme_images_and_videos/large/epoch0005.png" width="30%">
+  <img src="readme_images_and_videos/large/epoch0010.png" width="30%">
+  <img src="readme_images_and_videos/large/epoch0015.png" width="30%">
+  <img src="readme_images_and_videos/large/epoch0020.png" width="30%">
+  <img src="readme_images_and_videos/large/epoch0025.png" width="30%">
+  <img src="readme_images_and_videos/large/epoch0030.png" width="30%">
+  <img src="readme_images_and_videos/large/epoch0035.png" width="30%">
+  <img src="readme_images_and_videos/large/epoch0040.png" width="30%">
+  <img src="readme_images_and_videos/large/epoch0045.png" width="30%">
+  <img src="readme_images_and_videos/large/epoch0050.png" width="30%">
+  <img src="readme_images_and_videos/large/epoch0055.png" width="30%">
+  <img src="readme_images_and_videos/large/epoch0060.png" width="30%">
+  <img src="readme_images_and_videos/large/epoch0065.png" width="30%">
+  <img src="readme_images_and_videos/large/epoch0070.png" width="30%">
 </div>
 
 #### Both the models generate reasonable ouputs using the actual model and generate random noise using the EMA model. This is because the weights change a lot in the beginning (I did not run too many epochs) and EMA generalizes those weights creating an average that cannot be used
 
 #### This was the Generated image using the EMA model at the 70th epoch
-<img src="readme_images/ema_70.png" width="30%">
+<img src="readme_images_and_videos/ema_70.png" width="30%">
 
 ## Using the GUI
-<img src="readme_images/gui.png" width="100%">
+<img src="readme_images_and_videos/gui.png" width="100%">
 
 #### I used the larger model for the gui since it outperforms the smaller model 
 
