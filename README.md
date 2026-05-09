@@ -12,7 +12,7 @@
  6. Replace the egdes with the original colors
 
 <img src="readme_images/real/000000204536.jpg" width="30%">
-<img src="readme_images/sketch/000000204536.jpg" width="30%">
+<img src="readme_images/sketch_img/000000204536.jpg" width="30%">
 
 ## Model Architechture:
 ### I tested 2 models
