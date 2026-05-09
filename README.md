@@ -147,7 +147,7 @@ In this model, I used 256 x 256 size for the image and had 118k images in my dat
 <img src="readme_images_and_videos/ema_70.png" width="30%">
 
 ## Using the GUI
-<img src="readme_images_and_videos/gui.png" width="100%">
+[<img src="readme_images_and_videos/gui.png" width="100%">](https://private-user-images.githubusercontent.com/172546714/589937424-04653b86-f370-4c61-9404-5f04b188839b.mp4?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzgzMTQ5MjIsIm5iZiI6MTc3ODMxNDYyMiwicGF0aCI6Ii8xNzI1NDY3MTQvNTg5OTM3NDI0LTA0NjUzYjg2LWYzNzAtNGM2MS05NDA0LTVmMDRiMTg4ODM5Yi5tcDQ_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjYwNTA5JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI2MDUwOVQwODE3MDJaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1kNTkyMWNmMzU1NTQxZGY5YWQ5ODI1YzVjYzEwNzIyNDczOWZiNzNjM2JkZTgxMmY5OWY1NDQ5MDI3ZmRlOGE5JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZyZXNwb25zZS1jb250ZW50LXR5cGU9dmlkZW8lMkZtcDQifQ.mcijA3bBL1lGzP81odYr0RATQiQiU79jPPjgkaV-u6w)
 
 #### I used the larger model for the gui since it outperforms the smaller model 
 
