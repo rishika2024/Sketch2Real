@@ -68,15 +68,15 @@ The noisy image for the next step is then re-composed using the next step's rate
 This process repeats until x converges to a realistic image conditioned on the sketch. 
 
 <div align="center">
-  <img src="readme_images/small/sample_epoch0160" width="100%">
-  <img src="readme_images/small/sample_epoch0170" width="100%">
-  <img src="readme_images/small/sample_epoch0180" width="100%">
-  <img src="readme_images/small/sample_epoch0190" width="100%">
-  <img src="readme_images/small/sample_epoch0200" width="100%">
-  <img src="readme_images/small/sample_epoch0210" width="100%">
-  <img src="readme_images/small/sample_epoch0220" width="100%">
-  <img src="readme_images/small/sample_epoch0230" width="100%">
-  <img src="readme_images/small/sample_epoch0240" width="100%">
+  <img src="readme_images/small/sample_epoch0160.png" width="100%">
+  <img src="readme_images/small/sample_epoch0170.png" width="100%">
+  <img src="readme_images/small/sample_epoch0180.png" width="100%">
+  <img src="readme_images/small/sample_epoch0190.png" width="100%">
+  <img src="readme_images/small/sample_epoch0200.png" width="100%">
+  <img src="readme_images/small/sample_epoch0210.png" width="100%">
+  <img src="readme_images/small/sample_epoch0220.png" width="100%">
+  <img src="readme_images/small/sample_epoch0230.png" width="100%">
+  <img src="readme_images/small/sample_epoch0240.png" width="100%">
 </div>
 
 ### Problems with this model:
